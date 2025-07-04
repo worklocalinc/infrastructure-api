@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  infrastructure-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: infrastructure-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # Mount GCP credentials if using service account
+      # - ./gcp-service-account.json:/app/gcp-service-account.json:ro
+      # Mount gcloud config if using user credentials
+      - ~/.config/gcloud:/root/.config/gcloud:ro
+      # Logs
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - infrastructure-net
+
+  # Optional: Redis for caching
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: infrastructure-redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis-data:/data
+  #   command: redis-server --appendonly yes
+  #   restart: unless-stopped
+  #   networks:
+  #     - infrastructure-net
+
+networks:
+  infrastructure-net:
+    driver: bridge
+
+volumes:
+  redis-data:
